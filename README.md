@@ -13,7 +13,7 @@ Ini adalah antarmuka pengguna (UI) untuk aplikasi **Pusat Layanan Kemasan**. Dib
 ## 🌐 Demo Langsung
 
 *Link ke aplikasi yang sudah di-deploy akan tersedia di sini setelah kita melakukan deployment ke Vercel.*
-`[LINK-DEPLOYMENT-VERCEL-ANDA]`
+`[LINK-BELUM-TERSEDIA-WKWKW]`
 
 ---
 
