@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue'; // <-- PERBAIKAN DI SINI
 import { storeToRefs } from 'pinia';
 import { useReportStore } from '@/stores/reportStore';
+import VueApexCharts from 'vue3-apexcharts';
 
 const reportStore = useReportStore();
-const { summary, loading, error } = storeToRefs(reportStore);
+const { summary, loading, error, chartData } = storeToRefs(reportStore);
 
 const selectedPeriod = ref('monthly');
 const periods = [
@@ -18,6 +19,7 @@ const exportLoading = ref(false);
 
 const loadReport = () => {
   reportStore.fetchSalesSummary(selectedPeriod.value);
+  reportStore.fetchSalesChartData(selectedPeriod.value);
 };
 
 const handlePeriodChange = (periodValue) => {
@@ -32,6 +34,48 @@ const handleExport = async () => {
 };
 
 onMounted(loadReport);
+
+const chartSeries = computed(() => [
+  {
+    name: 'Pendapatan',
+    data: chartData.value.map(item => item.totalRevenue),
+  },
+]);
+
+const chartOptions = computed(() => ({
+  chart: {
+    type: 'area',
+    height: 350,
+    zoom: { enabled: false },
+    toolbar: { show: false },
+  },
+  dataLabels: { enabled: false },
+  stroke: { curve: 'smooth' },
+  xaxis: {
+    type: 'datetime',
+    categories: chartData.value.map(item => item._id),
+  },
+  yaxis: {
+    labels: {
+      formatter: (val) => `Rp ${val ? val.toLocaleString('id-ID') : 0}`, // Pengaman jika val null
+    },
+  },
+  tooltip: {
+    x: { format: 'dd MMM yyyy' },
+    y: {
+      formatter: (val) => `Rp ${val ? val.toLocaleString('id-ID') : 0}`, // Pengaman jika val null
+    },
+  },
+  fill: {
+    type: 'gradient',
+    gradient: {
+      shadeIntensity: 1,
+      opacityFrom: 0.7,
+      opacityTo: 0.9,
+      stops: [0, 90, 100],
+    },
+  },
+}));
 </script>
 
 <template>
@@ -68,25 +112,36 @@ onMounted(loadReport);
       <strong>Error:</strong> {{ error }}
     </div>
     
-    <div v-else-if="summary" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
-        <div class="bg-green-500 text-white p-4 rounded-full">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" /></svg>
+    <div v-else-if="summary" class="space-y-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+          <div class="bg-green-500 text-white p-4 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" /></svg>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Total Pendapatan ({{ selectedPeriod }})</p>
+            <p class="text-3xl font-bold text-gray-800">Rp {{ summary.totalRevenue.toLocaleString('id-ID') }}</p>
+          </div>
         </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500">Total Pendapatan ({{ selectedPeriod }})</p>
-          <p class="text-3xl font-bold text-gray-800">Rp {{ summary.totalRevenue.toLocaleString('id-ID') }}</p>
+        <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+          <div class="bg-blue-500 text-white p-4 rounded-full">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7v10l8 4m0-14L4 7" /></svg>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Total Pesanan Selesai ({{ selectedPeriod }})</p>
+            <p class="text-3xl font-bold text-gray-800">{{ summary.totalOrders }}</p>
+          </div>
         </div>
       </div>
-
-      <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
-        <div class="bg-blue-500 text-white p-4 rounded-full">
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7v10l8 4m0-14L4 7" /></svg>
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500">Total Pesanan Selesai ({{ selectedPeriod }})</p>
-          <p class="text-3xl font-bold text-gray-800">{{ summary.totalOrders }}</p>
-        </div>
+      
+      <div class="bg-white p-6 rounded-lg shadow-md">
+         <h2 class="text-lg font-semibold text-gray-700">Grafik Pendapatan ({{ selectedPeriod }})</h2>
+         <div v-if="!loading && chartData.length > 0" id="chart">
+           <VueApexCharts type="area" height="350" :options="chartOptions" :series="chartSeries"></VueApexCharts>
+         </div>
+         <div v-else-if="!loading && chartData.length === 0" class="text-center py-16 text-gray-500">
+           Tidak ada data penjualan untuk ditampilkan pada periode ini.
+         </div>
       </div>
     </div>
   </div>

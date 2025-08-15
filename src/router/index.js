@@ -12,6 +12,7 @@ import QueueCashierView from '../views/QueueCashierView.vue'
 import QueueDesignerView from '../views/QueueDesignerView.vue'
 import QueueOperatorView from '../views/QueueOperatorView.vue'
 import SalesReportView from '../views/SalesReportView.vue'
+import OrderDetailView from '../views/OrderDetailView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,12 @@ const router = createRouter({
       name: 'create-order',
       component: CreateOrderView,
       meta: { requiresAuth: true, allowedRoles: ['admin', 'kasir'] }
+    },
+    {
+      path: '/orders/:id', // <-- Rute dinamis dengan parameter 'id'
+      name: 'order-detail',
+      component: OrderDetailView,
+      meta: { requiresAuth: true }
     },
     {
       path: '/queue/kasir',

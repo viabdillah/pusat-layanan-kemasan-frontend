@@ -8,6 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 export const useReportStore = defineStore('reports', {
   state: () => ({
     summary: null,
+    chartData: [],
     loading: false,
     error: null,
   }),
@@ -62,6 +63,20 @@ export const useReportStore = defineStore('reports', {
       } catch (err) {
         console.error('Gagal mengunduh laporan:', err);
         alert('Gagal mengunduh laporan. Lihat console untuk detail.');
+      }
+    },
+    async fetchSalesChartData(period = 'monthly') {
+      // Kita tidak set loading di sini agar tidak mengganggu kartu ringkasan
+      const authStore = useAuthStore();
+      if (!authStore.token) throw new Error('Tidak ada token otentikasi.');
+
+      try {
+        const config = { headers: { Authorization: `Bearer ${authStore.token}` } };
+        const response = await axios.get(`${API_BASE_URL}/reports/sales-chart?period=${period}`, config);
+        this.chartData = response.data;
+      } catch (err) {
+        console.error("Gagal memuat data grafik:", err);
+        this.chartData = []; // Kosongkan jika error
       }
     },
   },

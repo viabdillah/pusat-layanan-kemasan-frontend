@@ -9,6 +9,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 export const useOrderStore = defineStore('orders', {
   state: () => ({
     orders: [],
+    activeOrder: null,
     loading: false,
     error: null,
   }),
@@ -82,6 +83,24 @@ export const useOrderStore = defineStore('orders', {
       } catch (err) {
         this.error = err.response?.data?.message || err.response?.data?.error || 'Gagal memuat data pemantauan.';
         this.orders = [];
+        throw this.error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async fetchOrderById(orderId) {
+      this.loading = true;
+      this.error = null;
+      this.activeOrder = null;
+      const authStore = useAuthStore();
+      if (!authStore.token) throw new Error('Tidak ada token otentikasi.');
+
+      try {
+        const config = { headers: { Authorization: `Bearer ${authStore.token}` } };
+        const response = await axios.get(`${API_BASE_URL}/orders/${orderId}`, config);
+        this.activeOrder = response.data;
+      } catch (err) {
+        this.error = err.response?.data?.message || err.response?.data?.error || 'Gagal memuat detail pesanan.';
         throw this.error;
       } finally {
         this.loading = false;
